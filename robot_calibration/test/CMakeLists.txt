@@ -72,8 +72,8 @@ add_rostest(error_block_tests2.test)
 if(ENABLE_COVERAGE_TESTING)
   set(COVERAGE_EXCLUDES "*/${PROJECT_NAME}/test*")
   add_code_coverage(
-    NAME ${PROJECT_NAME}_coverage
-    DEPENDS tests
+    NAME ${PROJECT_NAME}_coverage_report
+    DEPENDENCIES tests
   )
 endif()
 
