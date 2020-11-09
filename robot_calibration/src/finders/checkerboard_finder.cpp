@@ -56,6 +56,9 @@ bool CheckerboardFinder::init(const std::string& name, ros::NodeHandle& nh)
     std::string topic_name;
     nh.param<std::string>("topic", topic_name, "/points");
     subscriber_ = nh.subscribe(topic_name, 1, &CheckerboardFinder::cameraCallback, this);
+    ROS_INFO_STREAM("using "
+                    << "CLOUD"
+                    << " for detecting checker board");
   }
   else
   {
@@ -67,6 +70,9 @@ bool CheckerboardFinder::init(const std::string& name, ros::NodeHandle& nh)
       // Error will have been printed by manager
       return false;
     }
+    ROS_INFO_STREAM("using "
+                    << "RGB"
+                    << " for detecting checker board");
   }
 
   // Size of checkerboard
