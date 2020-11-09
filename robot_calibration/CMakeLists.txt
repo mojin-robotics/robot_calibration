@@ -26,6 +26,7 @@ find_package(catkin REQUIRED
     camera_calibration_parsers
     cv_bridge
     geometry_msgs
+    image_transport
     kdl_parser
     moveit_msgs
     nav_msgs
@@ -106,6 +107,7 @@ add_dependencies(robot_calibration robot_calibration_msgs_generate_messages_cpp)
 
 add_library(robot_calibration_feature_finders src/finders/checkerboard_finder.cpp
                                               src/finders/led_finder.cpp
+                                              src/finders/rgb_camera.cpp
                                               src/finders/plane_finder.cpp)
 target_link_libraries(robot_calibration_feature_finders robot_calibration
                                                         ${Boost_LIBRARIES}

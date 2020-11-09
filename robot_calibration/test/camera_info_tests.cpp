@@ -20,6 +20,7 @@
 #include <robot_calibration/capture/depth_camera.h>
 #include <gtest/gtest.h>
 
+
 TEST(CameraInfoTests, test_update_camera_info)
 {
   sensor_msgs::CameraInfo start;
