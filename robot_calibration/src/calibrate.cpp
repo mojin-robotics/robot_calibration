@@ -272,7 +272,9 @@ int main(int argc, char** argv)
             robot_calibration_msgs::CaptureConfig config;
             config.joint_states = *js_msg;
             // Assume all finders should find this pose (old style config):
-            for (robot_calibration::FeatureFinderMap::iterator it = finders_.begin(); it != finders_.end(); it++)
+            for (robot_calibration::FeatureFinderMap::iterator it = finders_.begin();
+                 it != finders_.end();
+                 it++)
             {
               config.features.push_back(it->first);
             }
@@ -301,7 +303,9 @@ int main(int argc, char** argv)
     }
 
     // For each pose in the capture sequence.
-    for (unsigned pose_idx = 0; (pose_idx < poses.size() || poses.size() == 0) && ros::ok(); ++pose_idx)
+    for (unsigned pose_idx = 0;
+         (pose_idx < poses.size() || poses.size() == 0) && ros::ok();
+         ++pose_idx)
     {
       robot_calibration_msgs::CalibrationData msg;
 
@@ -339,7 +343,9 @@ int main(int argc, char** argv)
       if (poses.size() == 0)
       {
         // In manual mode, we need to capture all features
-        for (robot_calibration::FeatureFinderMap::iterator it = finders_.begin(); it != finders_.end(); it++)
+        for (robot_calibration::FeatureFinderMap::iterator it = finders_.begin();
+             it != finders_.end();
+             it++)
         {
           if (!it->second->find(&msg))
           {
