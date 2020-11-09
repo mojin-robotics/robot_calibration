@@ -143,6 +143,12 @@ bool CheckerboardFinder::findInternal(robot_calibration_msgs::CalibrationData* m
     return false;
   }
 
+  if (cloud_.height == 1)
+  {
+    ROS_ERROR("OpenCV does not support unorganized cloud/image.");
+    return false;
+  }
+
   cv::Mat_<cv::Vec3b> rgb_image = getImageFromCloud();
 
   if (rgb_image.empty())
@@ -272,7 +278,7 @@ bool CheckerboardFinder::detectChessBoard(const cv::Mat_<cv::Vec3b>& image, std:
   ROS_INFO_STREAM("CheckerboardFinder: detecting chessboard corners: points_y: " << points_y_
                                                                                  << ", points_x: " << points_x_);
   const bool found =
-      cv::findChessboardCorners(image, cv::Size(points_x_, points_y_), points, CV_CALIB_CB_ADAPTIVE_THRESH);
+      cv::findChessboardCorners(image, cv::Size(points_x_, points_y_), points, cv::CALIB_CB_ADAPTIVE_THRESH);
 
   if (found)
   {
