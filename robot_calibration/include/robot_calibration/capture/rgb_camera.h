@@ -29,12 +29,12 @@ namespace robot_calibration
 
     bool init(ros::NodeHandle &n);
 
-    cv::Mat_<cv::Vec3b> getRgbImage() const;
+    cv::Mat_<cv::Vec3b> getRgbImage();
 
     robot_calibration_msgs::ExtendedCameraInfo getExtendedCameraInfo() const;
 
-    void solve2dTo3d(const std::vector<cv::Vec3d> &object_points,
-                     const std::vector<cv::Vec2f> &image_coords, std::vector<geometry_msgs::PointStamped>& points) const;
+    void solve2dTo3d(const std::vector<geometry_msgs::PointStamped> &object_points,
+                     const std::vector<cv::Point2f> &image_coords, std::vector<geometry_msgs::PointStamped> &points) const;
 
   private:
     ros::Subscriber camera_info_subscriber_;
@@ -44,6 +44,8 @@ namespace robot_calibration
     image_transport::Subscriber image_subscriber_;
 
     sensor_msgs::ImageConstPtr image_ptr_ = nullptr;
+
+    bool waiting_ = false;
   };
 
 } // namespace robot_calibration

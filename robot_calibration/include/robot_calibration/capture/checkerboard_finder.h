@@ -22,6 +22,7 @@
 #define ROBOT_CALIBRATION_CAPTURE_CHECKERBOARD_FINDER_H
 
 #include <robot_calibration/capture/depth_camera.h>
+#include <robot_calibration/capture/rgb_camera.h>
 #include <robot_calibration/plugins/feature_finder.h>
 #include <robot_calibration_msgs/CalibrationData.h>
 #include <ros/ros.h>
@@ -37,6 +38,11 @@ namespace robot_calibration
  */
 class CheckerboardFinder : public FeatureFinder
 {
+  enum class SensorDataType : uint8_t {
+    CLOUD,
+    RGB
+  };
+
 public:
   CheckerboardFinder();
   bool init(const std::string& name, ros::NodeHandle& n);
@@ -89,6 +95,10 @@ private:
   static const std::string CircleBoardSymmetric;
   static const std::string CircleBoardAsymmetric;
   std::string checkerboard_type_;
+
+  SensorDataType sensor_data_type_ = SensorDataType::CLOUD;
+
+  RgbCameraManager rgb_camera_manager_;
 };
 
 }  // namespace robot_calibration

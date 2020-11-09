@@ -45,10 +45,29 @@ bool CheckerboardFinder::init(const std::string& name, ros::NodeHandle& nh)
 
   std::cerr << "namespace: " << nh.getNamespace() << std::endl;
 
-  // Setup Scriber
-  std::string topic_name;
-  nh.param<std::string>("topic", topic_name, "/points");
-  subscriber_ = nh.subscribe(topic_name, 1, &CheckerboardFinder::cameraCallback, this);
+  std::string sensor_data_type_str;
+  nh.param<std::string>("sensor_data_type", sensor_data_type_str, "CLOUD");
+
+  if (sensor_data_type_str == "CLOUD")
+  {
+    sensor_data_type_ = SensorDataType::CLOUD;
+
+    // Setup Subscriber
+    std::string topic_name;
+    nh.param<std::string>("topic", topic_name, "/points");
+    subscriber_ = nh.subscribe(topic_name, 1, &CheckerboardFinder::cameraCallback, this);
+  }
+  else
+  {
+    sensor_data_type_ = SensorDataType::RGB;
+
+    // Setup to get camera info
+    if (!rgb_camera_manager_.init(nh))
+    {
+      // Error will have been printed by manager
+      return false;
+    }
+  }
 
   // Size of checkerboard
   nh.param<int>("points_x", points_x_, 5);
@@ -69,6 +88,7 @@ bool CheckerboardFinder::init(const std::string& name, ros::NodeHandle& nh)
 
   nh.param<std::string>("checkerboard_type", checkerboard_type_, ChessBoard);
 
+
   // Publish where checkerboard points were seen
   publisher_ = nh.advertise<sensor_msgs::PointCloud2>(getName() + "_points", 10);
 
@@ -76,11 +96,14 @@ bool CheckerboardFinder::init(const std::string& name, ros::NodeHandle& nh)
                                << "\nframe_id: " << frame_id_ << "\ncamera_sensor_name_: " << camera_sensor_name_
                                << "\nchain_sensor_name: " << chain_sensor_name_);
 
-  // Setup to get camera depth info
-  if (!depth_camera_manager_.init(nh))
+  if (sensor_data_type_ == SensorDataType::CLOUD)
   {
-    // Error will have been printed by manager
-    return false;
+    // Setup to get camera depth info
+    if (!depth_camera_manager_.init(nh))
+    {
+      // Error will have been printed by manager
+      return false;
+    }
   }
 
   return true;
@@ -136,20 +159,29 @@ bool CheckerboardFinder::findInternal(robot_calibration_msgs::CalibrationData* m
 {
   geometry_msgs::PointStamped rgbd;
 
-  // Get cloud
-  if (!waitForCloud())
-  {
-    ROS_ERROR("No point cloud data");
-    return false;
-  }
+  cv::Mat_<cv::Vec3b> rgb_image;
 
-  if (cloud_.height == 1)
+  if (sensor_data_type_ == SensorDataType::CLOUD)
   {
-    ROS_ERROR("OpenCV does not support unorganized cloud/image.");
-    return false;
-  }
+    // Get cloud
+    if (!waitForCloud())
+    {
+      ROS_ERROR("No point cloud data");
+      return false;
+    }
 
-  cv::Mat_<cv::Vec3b> rgb_image = getImageFromCloud();
+    if (cloud_.height == 1)
+    {
+      ROS_ERROR("OpenCV does not support unorganized cloud/image.");
+      return false;
+    }
+
+    rgb_image = getImageFromCloud();
+  }
+  else
+  {
+    rgb_image = rgb_camera_manager_.getRgbImage();
+  }
 
   if (rgb_image.empty())
   {
@@ -218,49 +250,76 @@ bool CheckerboardFinder::findInternal(robot_calibration_msgs::CalibrationData* m
       return false;
     }
 
-    // Fill in the headers
-    rgbd.header = cloud_.header;
-
-    // Fill in message
-    sensor_msgs::PointCloud2ConstIterator<float> xyz(cloud_, "x");
-    for (size_t i = 0; i < checker_board_image_positions.size(); ++i)
+    if (sensor_data_type_ == SensorDataType::CLOUD)
     {
-      // Get 3d point
-      size_t index = static_cast<size_t>(checker_board_image_positions[i].y) * cloud_.width +
-                     static_cast<size_t>(checker_board_image_positions[i].x);
-      rgbd.point.x = (xyz + index)[X];
-      rgbd.point.y = (xyz + index)[Y];
-      rgbd.point.z = (xyz + index)[Z];
-
-      // Do not accept NANs
-      if (std::isnan(rgbd.point.x) || std::isnan(rgbd.point.y) || std::isnan(rgbd.point.z))
-      {
-        ROS_ERROR_STREAM("CheckerBoardDetector:: Rejecting observation due to NAN point on " << i);
-        return false;
-      }
-
-      // Do not accept (0.0, 0.0, 0.0)
-      const double eps = static_cast<double>(10.0) * std::numeric_limits<double>::epsilon();
-      if ((std::fabs(rgbd.point.x) < eps) || (std::fabs(rgbd.point.y) < eps) || (std::fabs(rgbd.point.z) < eps))
-      {
-        ROS_ERROR_STREAM("CheckerBoardDetector:: Rejecting observation due to (0.0, 0.0, 0.0) point on " << i);
-        return false;
-      }
-
-      msg->observations[idx_cam].features[i] = rgbd;
       msg->observations[idx_cam].ext_camera_info = depth_camera_manager_.getDepthCameraInfo();
+    }
+    else
+    {
+      msg->observations[idx_cam].ext_camera_info = rgb_camera_manager_.getExtendedCameraInfo();
+    }
 
-      // Visualize
-      iter_cloud[0] = rgbd.point.x;
-      iter_cloud[1] = rgbd.point.y;
-      iter_cloud[2] = rgbd.point.z;
-      ++iter_cloud;
+    if (sensor_data_type_ == SensorDataType::CLOUD)
+    {
+      // Fill in the headers
+      rgbd.header = cloud_.header;
+
+      // Fill in message
+      sensor_msgs::PointCloud2ConstIterator<float> xyz(cloud_, "x");
+      for (size_t i = 0; i < checker_board_image_positions.size(); ++i)
+      {
+        // Get 3d point
+        size_t index = static_cast<size_t>(checker_board_image_positions[i].y) * cloud_.width +
+                       static_cast<size_t>(checker_board_image_positions[i].x);
+        rgbd.point.x = (xyz + index)[X];
+        rgbd.point.y = (xyz + index)[Y];
+        rgbd.point.z = (xyz + index)[Z];
+
+        // Do not accept NANs
+        if (std::isnan(rgbd.point.x) || std::isnan(rgbd.point.y) || std::isnan(rgbd.point.z))
+        {
+          ROS_ERROR_STREAM("CheckerBoardDetector:: Rejecting observation due to NAN point on " << i);
+          return false;
+        }
+
+        // Do not accept (0.0, 0.0, 0.0)
+        const double eps = static_cast<double>(10.0) * std::numeric_limits<double>::epsilon();
+        if ((std::fabs(rgbd.point.x) < eps) || (std::fabs(rgbd.point.y) < eps) || (std::fabs(rgbd.point.z) < eps))
+        {
+          ROS_ERROR_STREAM("CheckerBoardDetector:: Rejecting observation due to (0.0, 0.0, 0.0) point on " << i);
+          return false;
+        }
+
+        msg->observations[idx_cam].features[i] = rgbd;
+
+        // Visualize
+        iter_cloud[0] = rgbd.point.x;
+        iter_cloud[1] = rgbd.point.y;
+        iter_cloud[2] = rgbd.point.z;
+        ++iter_cloud;
+      }
+    }
+    else
+    {
+      rgb_camera_manager_.solve2dTo3d(msg->observations[idx_chain].features, checker_board_image_positions, msg->observations[idx_cam].features);
+
+      for (const auto p :  msg->observations[idx_cam].features)
+      {
+         // Visualize
+        iter_cloud[0] = p.point.x;
+        iter_cloud[1] = p.point.y;
+        iter_cloud[2] = p.point.z;
+        ++iter_cloud;
+      }
     }
 
     // Add debug cloud to message
     if (output_debug_)
     {
-      msg->observations[idx_cam].cloud = cloud_;
+      if (sensor_data_type_ == SensorDataType::CLOUD)
+      {
+        msg->observations[idx_cam].cloud = cloud_;
+      }
     }
 
     // Publish results

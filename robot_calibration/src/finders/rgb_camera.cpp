@@ -31,7 +31,11 @@ namespace robot_calibration
     image_subscriber_ = image_transport.subscribe(
         image_topic_name, 1,
         [this](const sensor_msgs::ImageConstPtr &image_ptr) {
-          image_ptr_ = image_ptr;
+          if (waiting_)
+          {
+            image_ptr_ = image_ptr;
+            waiting_ = false;
+          }
         });
 
     // Wait for camera_info
@@ -50,20 +54,35 @@ namespace robot_calibration
     return false;
   }
 
-  cv::Mat_<cv::Vec3b> RgbCameraManager::getRgbImage() const
+  cv::Mat_<cv::Vec3b> RgbCameraManager::getRgbImage()
   {
-    cv_bridge::CvImagePtr cv_ptr;
-    try
-    {
-      cv_ptr = cv_bridge::toCvCopy(image_ptr_, sensor_msgs::image_encodings::BGR8);
-    }
-    catch (cv_bridge::Exception &e)
-    {
-      ROS_ERROR("cv_bridge exception: %s", e.what());
-      return cv::Mat_<cv::Vec3b>();
-    }
+    // Initial wait cycle so that camera is definitely up to date.
+    ros::Duration(1 / 10.0).sleep();
 
-    return cv_ptr->image;
+    waiting_ = true;
+    int count = 250;
+    while ((--count > 0) && ros::ok())
+    {
+      if (!waiting_)
+      {
+        cv_bridge::CvImagePtr cv_ptr;
+        try
+        {
+          cv_ptr = cv_bridge::toCvCopy(image_ptr_, sensor_msgs::image_encodings::BGR8);
+        }
+        catch (cv_bridge::Exception &e)
+        {
+          ROS_ERROR("cv_bridge exception: %s", e.what());
+          return cv::Mat_<cv::Vec3b>();
+        }
+
+        return cv_ptr->image;
+      }
+      ros::Duration(0.01).sleep();
+      ros::spinOnce();
+    }
+    ROS_ERROR("Failed to get rgb  image");
+    return cv::Mat_<cv::Vec3b>();
   }
 
   robot_calibration_msgs::ExtendedCameraInfo RgbCameraManager::getExtendedCameraInfo() const
@@ -78,10 +97,18 @@ namespace robot_calibration
     return info;
   }
 
-  void RgbCameraManager::solve2dTo3d(const std::vector<cv::Vec3d> &object_points,
-                                     const std::vector<cv::Vec2f> &image_coords, std::vector<geometry_msgs::PointStamped> &points) const
+  void RgbCameraManager::solve2dTo3d(const std::vector<geometry_msgs::PointStamped> &object_points,
+                                     const std::vector<cv::Point2f> &image_coords, std::vector<geometry_msgs::PointStamped> &points) const
   {
     points.clear();
+
+    std::vector<cv::Vec3d> object_points_pnp;
+    object_points_pnp.reserve(object_points.size());
+
+    for (const auto& p : object_points)
+    {
+      object_points_pnp.push_back({p.point.x, p.point.y, p.point.z});
+    }
 
     if (camera_info_ptr_ == nullptr)
     {
@@ -100,8 +127,8 @@ namespace robot_calibration
     auto tvec = cv::Mat1d(3U, 1U);
 
     // only we have valid camera info, equally sized list of points and succesfull call to cv::solvePnP
-    if ((image_coords.size() == object_points.size()) &&
-        cv::solvePnP(object_points, image_coords, matrix3x3, dist_coeffs, rvec,
+    if ((image_coords.size() == object_points_pnp.size()) &&
+        cv::solvePnP(object_points_pnp, image_coords, matrix3x3, dist_coeffs, rvec,
                      tvec, false, cv::SOLVEPNP_ITERATIVE))
     {
       cv::Mat1d rotation_matrix = cv::Mat1d(3U, 3U);
@@ -113,7 +140,7 @@ namespace robot_calibration
       // apply the transformation to each point
       geometry_msgs::PointStamped xyz_stamped;
       xyz_stamped.header = image_ptr_->header;
-      for (const auto coord : object_points)
+      for (const auto coord : object_points_pnp)
       {
         const auto p = pose * coord;
         xyz_stamped.point.x = p[0U];
