@@ -20,7 +20,7 @@
 #include <pluginlib/class_list_macros.h>
 #include <robot_calibration/capture/checkerboard_finder.h>
 #include <robot_calibration/capture/rgb_camera_manager.h>
-#include <robot_calibration/capture/depth_camera.h>
+#include <robot_calibration/capture/depth_camera_manager.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
 #include <opencv2/highgui/highgui.hpp>

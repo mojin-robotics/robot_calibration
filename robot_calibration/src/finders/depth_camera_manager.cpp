@@ -16,7 +16,7 @@
  */
 
 // Author: Michael Ferguson
-#include <robot_calibration/capture/depth_camera.h>
+#include <robot_calibration/capture/depth_camera_manager.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
 namespace robot_calibration

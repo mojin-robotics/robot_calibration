@@ -17,7 +17,7 @@
 // Author: Michael Ferguson
 
 #include <robot_calibration/camera_info.h>
-#include <robot_calibration/capture/depth_camera.h>
+#include <robot_calibration/capture/depth_camera_manager.h>
 #include <gtest/gtest.h>
 
 
