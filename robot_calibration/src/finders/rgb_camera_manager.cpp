@@ -1,11 +1,11 @@
 /**
- * @file rgb_camera.cpp
+ * @file rgb_camera_manager.cpp
  * @author Thomas Lindemeier
  * @brief
  * @date 2020-11-09
  *
  */
-#include <robot_calibration/capture/rgb_camera.h>
+#include <robot_calibration/capture/rgb_camera_manager.h>
 
 #include <cv_bridge/cv_bridge.h>
 

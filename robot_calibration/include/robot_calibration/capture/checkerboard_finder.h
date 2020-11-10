@@ -22,7 +22,7 @@
 #define ROBOT_CALIBRATION_CAPTURE_CHECKERBOARD_FINDER_H
 
 #include <robot_calibration/capture/depth_camera.h>
-#include <robot_calibration/capture/rgb_camera.h>
+#include <robot_calibration/capture/rgb_camera_manager.h>
 #include <robot_calibration/plugins/feature_finder.h>
 #include <robot_calibration_msgs/CalibrationData.h>
 #include <ros/ros.h>

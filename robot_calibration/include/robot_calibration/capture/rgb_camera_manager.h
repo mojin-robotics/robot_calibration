@@ -1,5 +1,5 @@
 /**
- * @file rgb_camera.h
+ * @file rgb_camera_manager.h
  * @author Thomas Lindemeier
  * @brief
  * @date 2020-11-09
