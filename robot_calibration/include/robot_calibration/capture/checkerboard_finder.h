@@ -30,7 +30,7 @@
 #include <opencv2/calib3d/calib3d.hpp>
 
 #include <cv_bridge/cv_bridge.h>
-
+#include <image_transport/image_transport.h>
 namespace robot_calibration
 {
 /**
@@ -38,8 +38,10 @@ namespace robot_calibration
  */
 class CheckerboardFinder : public FeatureFinder
 {
+
 public:
   CheckerboardFinder();
+
   bool init(const std::string& name, ros::NodeHandle& n);
   bool find(robot_calibration_msgs::CalibrationData* msg);
 
@@ -83,6 +85,8 @@ private:
   static const std::string CircleBoardSymmetric;
   static const std::string CircleBoardAsymmetric;
   std::string checkerboard_type_;
+
+  image_transport::Publisher pub_detected_features_;
 };
 
 }  // namespace robot_calibration

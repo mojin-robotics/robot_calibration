@@ -23,6 +23,8 @@
 #include <robot_calibration/capture/depth_camera.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
+#include <opencv2/highgui/highgui.hpp>
+
 PLUGINLIB_EXPORT_CLASS(robot_calibration::CheckerboardFinder, robot_calibration::FeatureFinder)
 
 namespace robot_calibration
@@ -96,6 +98,9 @@ namespace robot_calibration
                                  << "\nframe_id: " << frame_id_ << "\ncamera_sensor_name_: " << camera_sensor_name_
                                  << "\nchain_sensor_name: " << chain_sensor_name_);
 
+    image_transport::ImageTransport it(nh);
+    pub_detected_features_ = it.advertise("detected_features", 1);
+
     return true;
   }
 
@@ -145,6 +150,17 @@ namespace robot_calibration
       return false;
     }
 
+    auto vis_image = rgb_image.clone();
+    cv::drawChessboardCorners(vis_image, cv::Size(points_x_, points_y_), checker_board_image_positions, found);
+
+    std_msgs::Header header;
+    header.frame_id = camera_manager_ptr_->getFrameId();
+    header.stamp = camera_manager_ptr_->getStamp();
+    const auto img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::BGR8, vis_image);
+    sensor_msgs::Image img_msg;
+    img_bridge.toImageMsg(img_msg);
+    pub_detected_features_.publish(img_msg);
+
     if (found)
     {
       // Create PointCloud2 to publish
@@ -187,7 +203,7 @@ namespace robot_calibration
 
       msg->observations[idx_cam].ext_camera_info = camera_manager_ptr_->getExtendedCameraInfo();
 
-      if (camera_manager_ptr_->solve2dTo3d(msg->observations[idx_chain].features, checker_board_image_positions, msg->observations[idx_cam].features))
+      if (!camera_manager_ptr_->solve2dTo3d(msg->observations[idx_chain].features, checker_board_image_positions, msg->observations[idx_cam].features))
       {
         return false;
       }
