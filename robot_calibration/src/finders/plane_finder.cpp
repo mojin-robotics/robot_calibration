@@ -128,7 +128,7 @@ bool PlaneFinder::find(robot_calibration_msgs::CalibrationData * msg)
   sensor_msgs::PointCloud2ConstIterator<float> xyz(cloud_, "x");
   sensor_msgs::PointCloud2Iterator<float> cloud_iter(cloud_, "x");
 
-  bool do_transform = transform_frame_ != "none";  // This can go away once the cloud gets transformed outside loop 
+  bool do_transform = transform_frame_ != "none";  // This can go away once the cloud gets transformed outside loop
   size_t j = 0;
   for (size_t i = 0; i < num_points; i++)
   {
@@ -204,7 +204,7 @@ bool PlaneFinder::find(robot_calibration_msgs::CalibrationData * msg)
   int idx_cam = msg->observations.size();
   msg->observations.resize(msg->observations.size() + 1);
   msg->observations[idx_cam].sensor_name = camera_sensor_name_;
-  msg->observations[idx_cam].ext_camera_info = depth_camera_manager_.getDepthCameraInfo();
+  msg->observations[idx_cam].ext_camera_info = depth_camera_manager_.getExtendedCameraInfo();
 
   // Fill in observation
   size_t step = cloud_.width / points_total;

@@ -106,7 +106,7 @@ private:
   std::vector<uint8_t> codes_;
 
   tf::TransformListener listener_;
-  DepthCameraInfoManager depth_camera_manager_;
+  DepthCameraManager depth_camera_manager_;
 
   /*
    * ROS Parameters

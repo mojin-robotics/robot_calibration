@@ -309,7 +309,7 @@ bool LedFinder::find(robot_calibration_msgs::CalibrationData * msg)
 
     // Push back observation
     observations[CAMERA].features.push_back(rgbd_pt);
-    observations[CAMERA].ext_camera_info = depth_camera_manager_.getDepthCameraInfo();
+    observations[CAMERA].ext_camera_info = depth_camera_manager_.getExtendedCameraInfo();
 
     // Visualize
     iter_cloud[0] = rgbd_pt.point.x;

@@ -24,82 +24,52 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <robot_calibration_msgs/CalibrationData.h>
 #include <robot_calibration_msgs/ExtendedCameraInfo.h>
+#include <robot_calibration/capture/camera_manager_base.h>
 
 namespace robot_calibration
 {
 
-/** @brief Base class for a feature finder. */
-class DepthCameraInfoManager
-{
-public:
-  DepthCameraInfoManager() : camera_info_valid_(false) {}
-  virtual ~DepthCameraInfoManager() {}
-
-  bool init(ros::NodeHandle& n)
+  class DepthCameraManager final : public CameraManagerBase
   {
-    std::string topic_name;
-    n.param<std::string>("camera_info_topic", topic_name, "/head_camera/depth/camera_info");
+  public:
+    DepthCameraManager();
+    ~DepthCameraManager();
 
-    camera_info_subscriber_ = n.subscribe(topic_name,
-                                          1,
-                                          &DepthCameraInfoManager::cameraInfoCallback,
-                                          this);
+    std::string getFrameId() const override;
+    ros::Time getStamp() const override;
 
-    // Get parameters of drivers
-    std::string driver_name;
-    n.param<std::string>("camera_driver", driver_name, "/head_camera/driver");
-    if (!n.getParam(driver_name+"/z_offset_mm", z_offset_mm_) ||
-        !n.getParam(driver_name+"/z_scaling", z_scaling_))
-    {
-      ROS_ERROR("%s is not set, are drivers running?",driver_name.c_str());
-      z_offset_mm_ = 0;
-      z_scaling_ = 1;
-    }
+    bool init(ros::NodeHandle &n) override;
 
-    // Wait for camera_info
-    int count = 25;
-    while (--count)
-    {
-      if (camera_info_valid_)
-      {
-        return true;
-      }
-      ros::Duration(0.1).sleep();
-      ros::spinOnce();
-    }
+    robot_calibration_msgs::ExtendedCameraInfo getExtendedCameraInfo() const override;
 
-    ROS_WARN("CameraInfo receive timed out.");
-    return false;
-  }
+    cv::Mat_<cv::Vec3b> getRgbImage() override;
 
-  robot_calibration_msgs::ExtendedCameraInfo getDepthCameraInfo()
-  {
-    robot_calibration_msgs::ExtendedCameraInfo info;
-    info.camera_info = *camera_info_ptr_;
-    info.parameters.resize(2);
-    info.parameters[0].name = "z_offset_mm";
-    info.parameters[0].value = z_offset_mm_;
-    info.parameters[1].name = "z_scaling";
-    info.parameters[1].value = z_scaling_;
-    return info;
-  }
+    bool solve2dTo3d(const std::vector<geometry_msgs::PointStamped> &object_points,
+                     const std::vector<cv::Point2f> &image_coords, std::vector<geometry_msgs::PointStamped> &points) const override;
 
-private:
-  void cameraInfoCallback(const sensor_msgs::CameraInfo::Ptr camera_info)
-  {
-    camera_info_ptr_ = camera_info;
-    camera_info_valid_ = true;
-  }
+  private:
+    void cameraInfoCallback(const sensor_msgs::CameraInfo::Ptr camera_info);
 
-  ros::Subscriber camera_info_subscriber_;
-  bool camera_info_valid_;
+    void cameraCallback(const sensor_msgs::PointCloud2 &cloud);
 
-  sensor_msgs::CameraInfo::Ptr camera_info_ptr_;
+    // Returns true if we got a message, false if we timeout
+    bool waitForCloud();
 
-  double z_offset_mm_;
-  double z_scaling_;
-};
+    ros::Subscriber camera_info_subscriber_;
+    bool camera_info_valid_;
 
-}  // namespace robot_calibration
+    sensor_msgs::CameraInfo::Ptr camera_info_ptr_;
 
-#endif  // ROBOT_CALIBRATION_CAPTURE_DEPTH_CAMERA_H
+    double z_offset_mm_;
+    double z_scaling_;
+
+    bool waiting_;
+    sensor_msgs::PointCloud2 cloud_;
+
+    ros::Subscriber subscriber_; /// Incoming sensor_msgs::PointCloud2
+
+  };
+
+} // namespace robot_calibration
+
+#endif // ROBOT_CALIBRATION_CAPTURE_DEPTH_CAMERA_H

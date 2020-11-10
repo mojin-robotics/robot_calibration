@@ -13,12 +13,13 @@
 #include <image_transport/image_transport.h>
 #include <robot_calibration_msgs/ExtendedCameraInfo.h>
 #include <geometry_msgs/PointStamped.h>
+#include <robot_calibration/capture/camera_manager_base.h>
 
 #include <opencv2/imgproc/imgproc.hpp>
 namespace robot_calibration
 {
 
-  class RgbCameraManager
+  class RgbCameraManager final : public CameraManagerBase
   {
   public:
     RgbCameraManager() = default;
@@ -27,14 +28,17 @@ namespace robot_calibration
     RgbCameraManager(const RgbCameraManager &) = delete;
     RgbCameraManager &operator=(const RgbCameraManager &) = delete;
 
-    bool init(ros::NodeHandle &n);
+    std::string getFrameId() const override;
+    ros::Time getStamp() const override;
 
-    cv::Mat_<cv::Vec3b> getRgbImage();
+    bool init(ros::NodeHandle &n) override;
 
-    robot_calibration_msgs::ExtendedCameraInfo getExtendedCameraInfo() const;
+    cv::Mat_<cv::Vec3b> getRgbImage() override;
 
-    void solve2dTo3d(const std::vector<geometry_msgs::PointStamped> &object_points,
-                     const std::vector<cv::Point2f> &image_coords, std::vector<geometry_msgs::PointStamped> &points) const;
+    robot_calibration_msgs::ExtendedCameraInfo getExtendedCameraInfo() const override;
+
+    bool solve2dTo3d(const std::vector<geometry_msgs::PointStamped> &object_points,
+                     const std::vector<cv::Point2f> &image_coords, std::vector<geometry_msgs::PointStamped> &points) const override;
 
   private:
     ros::Subscriber camera_info_subscriber_;

@@ -13,11 +13,20 @@
 
 namespace robot_calibration
 {
+  std::string RgbCameraManager::getFrameId() const
+  {
+    return image_ptr_->header.frame_id;
+  }
+
+  ros::Time RgbCameraManager::getStamp() const
+  {
+    return image_ptr_->header.stamp;
+  }
 
   bool RgbCameraManager::init(ros::NodeHandle &n)
   {
     std::string info_topic_name;
-    n.param<std::string>("rgb_camera_info_topic", info_topic_name, "/camera_info");
+    n.param<std::string>("sensor_info_topic", info_topic_name, "/camera_info");
     camera_info_subscriber_ = n.subscribe<
         sensor_msgs::CameraInfo, const sensor_msgs::CameraInfoConstPtr &>(
         info_topic_name, 1,
@@ -27,7 +36,7 @@ namespace robot_calibration
 
     image_transport::ImageTransport image_transport(n);
     std::string image_topic_name;
-    n.param<std::string>("image_topic_name", image_topic_name, "/image");
+    n.param<std::string>("sensor_data_topic", image_topic_name, "/image");
     image_subscriber_ = image_transport.subscribe(
         image_topic_name, 1,
         [this](const sensor_msgs::ImageConstPtr &image_ptr) {
@@ -97,7 +106,7 @@ namespace robot_calibration
     return info;
   }
 
-  void RgbCameraManager::solve2dTo3d(const std::vector<geometry_msgs::PointStamped> &object_points,
+  bool RgbCameraManager::solve2dTo3d(const std::vector<geometry_msgs::PointStamped> &object_points,
                                      const std::vector<cv::Point2f> &image_coords, std::vector<geometry_msgs::PointStamped> &points) const
   {
     points.clear();
@@ -105,7 +114,7 @@ namespace robot_calibration
     std::vector<cv::Vec3d> object_points_pnp;
     object_points_pnp.reserve(object_points.size());
 
-    for (const auto& p : object_points)
+    for (const auto &p : object_points)
     {
       object_points_pnp.push_back({p.point.x, p.point.y, p.point.z});
     }
@@ -113,7 +122,7 @@ namespace robot_calibration
     if (camera_info_ptr_ == nullptr)
     {
       ROS_ERROR("no camera info availabe");
-      return;
+      return false;
     }
 
     cv::Mat1d matrix3x3 = cv::Mat1d(3U, 3U);
@@ -149,6 +158,7 @@ namespace robot_calibration
         points.push_back(xyz_stamped);
       }
     }
+    return true;
   }
 
 } // namespace robot_calibration

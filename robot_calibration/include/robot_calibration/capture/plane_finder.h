@@ -46,7 +46,7 @@ private:
 
   bool waiting_;
   sensor_msgs::PointCloud2 cloud_;
-  DepthCameraInfoManager depth_camera_manager_;
+  DepthCameraManager depth_camera_manager_;
 
   std::string camera_sensor_name_;
   double points_max_;

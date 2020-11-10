@@ -19,6 +19,7 @@ target_link_libraries(rotation_tests robot_calibration
 add_executable(camera_info_tests camera_info_tests.cpp)
 add_dependencies(tests camera_info_tests)
 target_link_libraries(camera_info_tests robot_calibration
+                                  robot_calibration_feature_finders
                                   ${Boost_LIBRARIES}
                                   ${catkin_LIBRARIES}
                                   ${GTEST_LIBRARIES})
