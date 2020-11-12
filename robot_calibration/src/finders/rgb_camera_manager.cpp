@@ -51,15 +51,14 @@ namespace robot_calibration
     int count = 25;
     while (--count)
     {
-      if (camera_info_ptr_ != nullptr)
+      if (image_ptr_ != nullptr)
       {
         return true;
       }
       ros::Duration(0.1).sleep();
       ros::spinOnce();
     }
-
-    ROS_WARN("CameraInfo received timed out.");
+    ROS_FATAL("no camera info availabe");
     return false;
   }
 
@@ -96,6 +95,12 @@ namespace robot_calibration
 
   robot_calibration_msgs::ExtendedCameraInfo RgbCameraManager::getExtendedCameraInfo() const
   {
+    if (camera_info_ptr_ == nullptr)
+    {
+      ROS_FATAL("no camera info availabe");
+      return robot_calibration_msgs::ExtendedCameraInfo();
+    }
+
     robot_calibration_msgs::ExtendedCameraInfo info;
     info.camera_info = *camera_info_ptr_;
     info.parameters.resize(2);
