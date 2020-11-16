@@ -49,9 +49,9 @@ namespace robot_calibration
 
     // Wait for camera_info
     int count = 25;
-    while (--count)
+    while (--count > 0)
     {
-      if (image_ptr_ != nullptr)
+      if (camera_info_ptr_ != nullptr)
       {
         return true;
       }
