@@ -99,7 +99,7 @@ namespace robot_calibration
                                  << "\nchain_sensor_name: " << chain_sensor_name_);
 
     image_transport::ImageTransport it(nh);
-    pub_detected_features_ = it.advertise("detected_features", 1);
+    pub_detected_features_ = it.advertise("detected_features", 1, true);
 
     return true;
   }
@@ -231,14 +231,16 @@ namespace robot_calibration
   {
     ROS_INFO_STREAM("CheckerboardFinder: detecting chessboard corners: points_y: " << points_y_
                                                                                    << ", points_x: " << points_x_);
+    cv::Mat_<cv::Vec3b> filtered(image.size());
+    cv::GaussianBlur(image, filtered, cv::Size(3, 3), 0.0);
     const bool found =
-        cv::findChessboardCorners(image, cv::Size(points_x_, points_y_), points, cv::CALIB_CB_ADAPTIVE_THRESH);
+        cv::findChessboardCorners(filtered, cv::Size(points_x_, points_y_), points, cv::CALIB_CB_ADAPTIVE_THRESH + cv::CALIB_CB_NORMALIZE_IMAGE + cv::CALIB_CB_FAST_CHECK);
 
     if (found)
     {
       cv::Mat gray;
       cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY);
-      cv::cornerSubPix(gray, points, cv::Size(11, 11), cv::Size(-1, -1),
+      cv::cornerSubPix(image, points, cv::Size(11, 11), cv::Size(-1, -1),
                        cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
     }
 
