@@ -17,8 +17,9 @@
 // Author: Michael Ferguson
 
 #include <robot_calibration/camera_info.h>
-#include <robot_calibration/capture/depth_camera.h>
+#include <robot_calibration/capture/depth_camera_manager.h>
 #include <gtest/gtest.h>
+
 
 TEST(CameraInfoTests, test_update_camera_info)
 {
@@ -49,12 +50,12 @@ TEST(CameraInfoTests, test_update_camera_info)
 TEST(CameraInfoTests, test_extended_camera_info)
 {
   ros::NodeHandle nh("~");
-  robot_calibration::DepthCameraInfoManager manager;
+  robot_calibration::DepthCameraManager manager;
 
   manager.init(nh);
 
   robot_calibration_msgs::ExtendedCameraInfo eci =
-    manager.getDepthCameraInfo();
+    manager.getExtendedCameraInfo();
 
   ASSERT_EQ(static_cast<size_t>(2), eci.parameters.size());
   EXPECT_EQ(eci.parameters[0].name, "z_offset_mm");

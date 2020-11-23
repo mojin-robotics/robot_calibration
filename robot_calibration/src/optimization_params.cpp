@@ -21,9 +21,12 @@
 
 namespace robot_calibration
 {
-OptimizationParams::OptimizationParams() : base_link("base_link")
+
+OptimizationParams::OptimizationParams() :
+  base_link("base_link")
 {
 }
+
 
 bool OptimizationParams::LoadFromROS(ros::NodeHandle& nh)
 {

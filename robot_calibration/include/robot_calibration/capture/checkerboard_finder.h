@@ -21,7 +21,8 @@
 #ifndef ROBOT_CALIBRATION_CAPTURE_CHECKERBOARD_FINDER_H
 #define ROBOT_CALIBRATION_CAPTURE_CHECKERBOARD_FINDER_H
 
-#include <robot_calibration/capture/depth_camera.h>
+#include <robot_calibration/capture/depth_camera_manager.h>
+#include <robot_calibration/capture/camera_manager_base.h>
 #include <robot_calibration/plugins/feature_finder.h>
 #include <robot_calibration_msgs/CalibrationData.h>
 #include <ros/ros.h>
@@ -29,7 +30,7 @@
 #include <opencv2/calib3d/calib3d.hpp>
 
 #include <cv_bridge/cv_bridge.h>
-
+#include <image_transport/image_transport.h>
 namespace robot_calibration
 {
 /**
@@ -37,33 +38,28 @@ namespace robot_calibration
  */
 class CheckerboardFinder : public FeatureFinder
 {
+
 public:
   CheckerboardFinder();
+
   bool init(const std::string& name, ros::NodeHandle& n);
   bool find(robot_calibration_msgs::CalibrationData* msg);
 
 private:
   bool findInternal(robot_calibration_msgs::CalibrationData* msg);
 
-  void cameraCallback(const sensor_msgs::PointCloud2& cloud);
-  bool waitForCloud();
-
   bool detectChessBoard(const cv::Mat_<cv::Vec3b>& image, std::vector<cv::Point2f>& points) const;
   bool detectCircleBoard(const cv::Mat_<cv::Vec3b>& image, std::vector<cv::Point2f>& points,
                          const bool asymmetric) const;
-
-  cv::Mat_<cv::Vec3b> getImageFromCloud() const;
 
   std::vector<geometry_msgs::PointStamped> computeObjectPointsCircleBoard(const bool asymmetric) const;
 
   std::vector<geometry_msgs::PointStamped> computeObjectPointsChessBoard() const;
 
-  ros::Subscriber subscriber_;  /// Incoming sensor_msgs::PointCloud2
+
   ros::Publisher publisher_;    /// Outgoing sensor_msgs::PointCloud2
 
-  bool waiting_;
-  sensor_msgs::PointCloud2 cloud_;
-  DepthCameraInfoManager depth_camera_manager_;
+  std::unique_ptr<CameraManagerBase> camera_manager_ptr_ = nullptr;
 
   /*
    * ROS Parameters
@@ -89,6 +85,8 @@ private:
   static const std::string CircleBoardSymmetric;
   static const std::string CircleBoardAsymmetric;
   std::string checkerboard_type_;
+
+  image_transport::Publisher pub_detected_features_;
 };
 
 }  // namespace robot_calibration

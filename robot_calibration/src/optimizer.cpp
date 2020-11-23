@@ -41,8 +41,9 @@
 namespace robot_calibration
 {
 
-Optimizer::Optimizer(const std::string &robot_description) : num_params_(0),
-                                                             num_residuals_(0)
+Optimizer::Optimizer(const std::string& robot_description) :
+  num_params_(0),
+  num_residuals_(0)
 {
   if (!model_.initString(robot_description))
     std::cerr << "Failed to parse URDF." << std::endl;

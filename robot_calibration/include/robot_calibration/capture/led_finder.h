@@ -21,7 +21,7 @@
 #define ROBOT_CALIBRATION_CAPTURE_LED_FINDER_H
 
 #include <ros/ros.h>
-#include <robot_calibration/capture/depth_camera.h>
+#include <robot_calibration/capture/depth_camera_manager.h>
 #include <robot_calibration/plugins/feature_finder.h>
 
 #include <tf/transform_listener.h>
@@ -106,7 +106,7 @@ private:
   std::vector<uint8_t> codes_;
 
   tf::TransformListener listener_;
-  DepthCameraInfoManager depth_camera_manager_;
+  DepthCameraManager depth_camera_manager_;
 
   /*
    * ROS Parameters

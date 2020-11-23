@@ -18,7 +18,7 @@
 #define ROBOT_CALIBRATION_CAPTURE_PLANE_FINDER_H
 
 #include <ros/ros.h>
-#include <robot_calibration/capture/depth_camera.h>
+#include <robot_calibration/capture/depth_camera_manager.h>
 #include <robot_calibration/plugins/feature_finder.h>
 #include <robot_calibration_msgs/CalibrationData.h>
 #include <cv_bridge/cv_bridge.h>
@@ -46,7 +46,7 @@ private:
 
   bool waiting_;
   sensor_msgs::PointCloud2 cloud_;
-  DepthCameraInfoManager depth_camera_manager_;
+  DepthCameraManager depth_camera_manager_;
 
   std::string camera_sensor_name_;
   double points_max_;
